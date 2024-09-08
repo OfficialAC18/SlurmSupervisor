@@ -4,6 +4,7 @@ import asyncio
 import argparse
 import batch_runner
 from utils import provision_instance
+from SlurmSupervisor.instance import Instance
 
 PROGRAM = sys.argv[1]
 INSTANCES = []
@@ -13,17 +14,18 @@ async def instance_supervisor(chdir : str,
                             instance : str,
                             num_instances : int,
                             time : int,
-                            check_freq : int):
+                            check_freq : int,
+                            program : str):
     while True:
         if len(INSTANCES) < num_instances and NUM_REQUESTS < num_instances:
             #Need to submit a batch job for script
-            provision_instance(chdir,
+            instance_id = provision_instance(chdir,
                                instance,
                                time)
+            INSTANCES.append(Instance(instance_id))
             NUM_REQUESTS += 1
         else:
-            
-            await asyncio.sleep()
+            await asyncio.sleep(check_freq*60)
 
             
 
@@ -79,7 +81,7 @@ async def main():
     parser.add_argument("--check_freq",
                         type=int,
                         default = 10,
-                        help="The number of minutes after which we check for ")
+                        help="The number of minutes after which we check if we have instance assigned to us")
 
     args = parser.parse_args()
 
